@@ -74,16 +74,28 @@ Route::post('/mahasiswa', function (Request $request) {
 
     try {
         $pdo = DB::connection()->getPdo();
-        $cek = $pdo->prepare(
-            'SELECT COUNT(*) FROM mahasiswa
-             WHERE nim = :nim OR email = :email'
-        );
-        $cek->execute(['nim' => $data['nim'], 'email' => $data['email']]);
 
-        if ((int) $cek->fetchColumn() > 0) {
+        $cekNim = $pdo->prepare(
+            'SELECT COUNT(*) FROM mahasiswa WHERE nim = :nim'
+        );
+        $cekNim->execute(['nim' => $data['nim']]);
+
+        if ((int) $cekNim->fetchColumn() > 0) {
             return back()->withInput()->with(
                 'gagal',
-                'NIM atau email sudah digunakan.'
+                'NIM sudah digunakan.'
+            );
+        }
+
+        $cekEmail = $pdo->prepare(
+            'SELECT COUNT(*) FROM mahasiswa WHERE email = :email'
+        );
+        $cekEmail->execute(['email' => $data['email']]);
+
+        if ((int) $cekEmail->fetchColumn() > 0) {
+            return back()->withInput()->with(
+                'gagal',
+                'Email sudah digunakan.'
             );
         }
 
@@ -159,21 +171,36 @@ Route::put('/mahasiswa/{id}', function (
 
     try {
         $pdo = DB::connection()->getPdo();
-        $cek = $pdo->prepare(
+
+        $cekNim = $pdo->prepare(
             'SELECT COUNT(*) FROM mahasiswa
-             WHERE (nim = :nim OR email = :email)
-               AND id <> :id'
+             WHERE nim = :nim AND id <> :id'
         );
-        $cek->execute([
+        $cekNim->execute([
             'nim' => $data['nim'],
+            'id' => $id,
+        ]);
+
+        if ((int) $cekNim->fetchColumn() > 0) {
+            return back()->withInput()->with(
+                'gagal',
+                'NIM sudah digunakan'
+            );
+        }
+
+        $cekEmail = $pdo->prepare(
+            'SELECT COUNT(*) FROM mahasiswa
+             WHERE email = :email AND id <> :id'
+        );
+        $cekEmail->execute([
             'email' => $data['email'],
             'id' => $id,
         ]);
 
-        if ((int) $cek->fetchColumn() > 0) {
+        if ((int) $cekEmail->fetchColumn() > 0) {
             return back()->withInput()->with(
                 'gagal',
-                'NIM atau email sudah digunakan mahasiswa lain.'
+                'Email sudah digunakan'
             );
         }
 
